@@ -98,3 +98,62 @@ func checkProfileAlternative(prefs Profile, alts []Alternative) error {
 	}
 	return nil
 }
+
+func Contains(s []Alternative, e Alternative) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func SWF(p Profile) (count Count, err error) {
+	// Recover all the alternatives
+	alts := make([]Alternative, 0)
+	for _, prefs := range p {
+		for _, alt := range prefs {
+			if !Contains(alts, alt) {
+				alts = append(alts, alt)
+			}
+		}
+	}
+
+	// Check if the profile is valid
+	err = checkProfileAlternative(p, alts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize the count for each alternative
+	count = make(Count)
+	for _, alt := range alts {
+		count[alt] = 0
+	}
+
+	// Score each alternative based on its rank in each agent's preferences
+	for _, prefs := range p {
+		numPrefs := len(prefs) // Total number of preferences for the agent
+		for i, alt := range prefs {
+			// Give a score of len(prefs) - 1 for the first choice, len(prefs) - 2 for the second choice, etc.
+			count[alt] += numPrefs - 1 - i
+		}
+	}
+
+	return count, nil
+}
+
+
+func SCF(p Profile) (bestAlts []Alternative, err error) {
+	// Get the score (count) of each alternative using SWF
+	count, err := SWF(p)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use maxCount to find the alternatives with the highest score
+	bestAlts = maxCount(count)
+
+	// Return the best alternatives
+	return bestAlts, nil
+}
