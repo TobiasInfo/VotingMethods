@@ -1,5 +1,6 @@
 package comsoc
 
+// TODO : Revoir ces fonctions
 func MajoritySWF(p Profile) (count Count, err error) {
 	count = make(Count)
 	for _, prefs := range p {

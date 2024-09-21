@@ -1,6 +1,8 @@
 package agt
 
-type Alternative int
+import "ia04/comsoc"
+
+type Alternative = comsoc.Alternative
 
 // Agent represents a voting agent with preferences.
 type Agent struct {
