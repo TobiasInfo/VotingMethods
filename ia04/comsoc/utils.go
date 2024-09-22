@@ -44,6 +44,8 @@ func maxCount(count Count) (bestAlts []Alternative) {
 	return bestAlts
 }
 
+// TO DO  : revoir comment on check les profils il y a des cas par example comme la methode approval ou un agent n'est pas obligé de donner toutes les alternatives
+// maybe separer le check de la presence de toutes les alternativs du check global des profils et call ca que quand on a besoin de toutes les alternatives
 // vérifie les préférences d'un agent, par ex. qu'ils sont tous complets
 // et que chaque alternative n'apparaît qu'une seule fois
 func checkProfile(prefs []Alternative, alts []Alternative) error {
