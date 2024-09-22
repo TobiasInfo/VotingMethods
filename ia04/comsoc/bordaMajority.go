@@ -1,9 +1,12 @@
 package comsoc
 
-// TODO : Implements these fonctions
 func BordaSWF(p Profile) (count Count, err error) {
 	count = make(Count)
-
+	for _, prefs := range p {
+		for i, alt := range prefs {
+			count[alt] += len(prefs) - 1 - i
+		}
+	}
 	return count, nil
 }
 func BordaSCF(p Profile) (bestAlts []Alternative, err error) {
