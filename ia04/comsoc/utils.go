@@ -78,17 +78,17 @@ func checkProfileAlternative(prefs Profile, alts []Alternative) error {
 	}
 	return nil
 }
+func Contains(s []Alternative, e Alternative) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
 
 // ces fonctions vont etre implementees apr methode de vote donc pas d interet de les implementer ici
 
-// func Contains(s []Alternative, e Alternative) bool {
-// 	for _, a := range s {
-// 		if a == e {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
 // func SWF(p Profile) (count Count, err error) {
 // 	// Recover all the alternatives
 // 	alts := make([]Alternative, 0)
