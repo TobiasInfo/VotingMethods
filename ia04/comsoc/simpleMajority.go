@@ -1,12 +1,10 @@
 package comsoc
 
-// TODO : Revoir ces fonctions
 func MajoritySWF(p Profile) (count Count, err error) {
 	count = make(Count)
 	for _, prefs := range p {
-		for i, alt := range prefs {
-			count[alt] += len(prefs) - i - 1
-		}
+		firstChoice := prefs[0]
+		count[firstChoice] += 1
 	}
 	return count, nil
 }
