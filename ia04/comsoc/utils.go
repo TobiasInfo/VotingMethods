@@ -44,42 +44,45 @@ func maxCount(count Count) (bestAlts []Alternative) {
 	return bestAlts
 }
 
-// TO DO  : revoir comment on check les profils il y a des cas par example comme la methode approval ou un agent n'est pas obligé de donner toutes les alternatives
-// maybe separer le check de la presence de toutes les alternativs du check global des profils et call ca que quand on a besoin de toutes les alternatives
-// vérifie les préférences d'un agent, par ex. qu'ils sont tous complets
-// et que chaque alternative n'apparaît qu'une seule fois
-func checkProfile(prefs []Alternative, alts []Alternative) error {
-	// Vérifier que prefs est complet
-	if len(prefs) != len(alts) {
-		return fmt.Errorf("le profil n'est pas complet")
-	}
-	// Vérifier que chaque alternative n'apparaît qu'une seule fois
+// TODO  : revoir si la logique est bonne
+
+func checkProfile(prefs []Alternative, alts []Alternative, complete bool) error {
 	seen := make(map[Alternative]bool)
+
+	// Vérifier chaque alternative dans les préférences
 	for _, alt := range prefs {
 		if seen[alt] {
 			return fmt.Errorf("l'alternative %v apparaît plusieurs fois", alt)
 		}
 		seen[alt] = true
 	}
-	// Vérifier que chaque alternative de alts apparaît exactement une fois dans prefs
-	for _, alt := range alts {
-		if !seen[alt] {
-			return fmt.Errorf("l'alternative %v n'apparaît pas dans le profil", alt)
+
+	// Si 'complete' est vrai, vérifier que toutes les alternatives sont présentes
+	if complete {
+		if len(prefs) != len(alts) {
+			return fmt.Errorf("le profil n'est pas complet : il manque des alternatives")
+		}
+		// Vérifier que chaque alternative de alts apparaît exactement une fois dans prefs
+		for _, alt := range alts {
+			if !seen[alt] {
+				return fmt.Errorf("l'alternative %v n'apparaît pas dans le profil", alt)
+			}
 		}
 	}
+
 	return nil
 }
 
-// vérifie le profil donné, par ex. qu'ils sont tous complets et
-// que chaque alternative de alts apparaît exactement une fois par préférences
-func checkProfileAlternative(prefs Profile, alts []Alternative) error {
+// vérifie le profil donné, en passant 'complete' pour déterminer le niveau de vérification
+func checkProfileAlternative(prefs Profile, alts []Alternative, complete bool) error {
 	for _, p := range prefs {
-		if err := checkProfile(p, alts); err != nil {
+		if err := checkProfile(p, alts, complete); err != nil {
 			return err
 		}
 	}
 	return nil
 }
+
 func Contains(s []Alternative, e Alternative) bool {
 	for _, a := range s {
 		if a == e {
