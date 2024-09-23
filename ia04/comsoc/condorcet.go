@@ -8,7 +8,14 @@ func CondorcetWinner(p Profile) (bestAlts []Alternative, err error) {
 		return nil, err
 	}
 
-	// TODO : implement the CondorcetWinner algorithm
-	return nil, fmt.Errorf("CondorcetWinner not implemented yet")
+	wins := make(map[Alternative]map[Alternative]int)
+	for _, prefs := range p {
+		for i := 0; i < len(prefs)-1; i++ {
+			for j := i + 1; j < len(prefs); j++ {
+				wins[prefs[i]][prefs[j]]++
+			}
+		}
+	}
 
+	return nil, fmt.Errorf("no Condorcet winner")
 }
