@@ -2,11 +2,9 @@ package comsoc
 
 func ApprovalSWF(p Profile, thresholds []int) (count Count, err error) {
 	count = make(Count)
-	for i, prefs := range p {
-		if len(prefs) >= thresholds[i] {
-			for _, alt := range prefs {
-				count[alt]++
-			}
+	for i := 0; i < len(p); i++ {
+		for j := 0; j < thresholds[i]; j++ {
+			count[p[i][j]]++
 		}
 	}
 	return count, nil
