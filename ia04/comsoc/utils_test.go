@@ -47,17 +47,17 @@ func TestMaxCount(t *testing.T) {
 func TestCheckProfile(t *testing.T) {
 	alts := []Alternative{1, 2, 3}
 	prefs := []Alternative{1, 2, 3}
-	if err := checkProfile(prefs, alts, true); err != nil {
+	if err := checkProfile(prefs, alts); err != nil {
 		t.Error("The profile should be valid")
 	}
 
 	prefs = []Alternative{1, 2, 4}
-	if err := checkProfile(prefs, alts, true); err == nil {
+	if err := checkProfile(prefs, alts); err == nil {
 		t.Error("The profile should be invalid")
 	}
 
 	prefs = []Alternative{1, 2, 3, 4}
-	if err := checkProfile(prefs, alts, true); err == nil {
+	if err := checkProfile(prefs, alts); err == nil {
 		t.Error("The profile should be invalid")
 	}
 }
@@ -66,17 +66,17 @@ func TestCheckProfileAlternative(t *testing.T) {
 	alts := []Alternative{1, 2, 3}
 
 	p := Profile{{1, 2, 3}, {1, 2, 3}}
-	if err := checkProfileAlternative(p, alts, true); err != nil {
+	if err := checkProfileAlternative(p, alts); err != nil {
 		t.Error("The alternative should be valid")
 	}
 
 	p = Profile{{1, 2}, {1, 2, 3}}
-	if err := checkProfileAlternative(p, alts, true); err == nil {
+	if err := checkProfileAlternative(p, alts); err == nil {
 		t.Error("The alternative should be invalid")
 	}
 
 	p = Profile{{1, 2, 4}, {1, 2, 3}}
-	if err := checkProfileAlternative(p, alts, true); err == nil {
+	if err := checkProfileAlternative(p, alts); err == nil {
 		t.Error("The alternative should be invalid")
 	}
 }

@@ -44,39 +44,33 @@ func maxCount(count Count) (bestAlts []Alternative) {
 	return bestAlts
 }
 
-// TODO  : revoir si la logique est bonne
-
-func checkProfile(prefs []Alternative, alts []Alternative, complete bool) error {
+func checkProfile(prefs []Alternative, alts []Alternative) error {
+	// Vérifier que prefs est complet
+	if len(prefs) != len(alts) {
+		return fmt.Errorf("le profil n'est pas complet")
+	}
+	// Vérifier que chaque alternative n'apparaît qu'une seule fois
 	seen := make(map[Alternative]bool)
-
-	// Vérifier chaque alternative dans les préférences
 	for _, alt := range prefs {
 		if seen[alt] {
 			return fmt.Errorf("l'alternative %v apparaît plusieurs fois", alt)
 		}
 		seen[alt] = true
 	}
-
-	// Si 'complete' est vrai, vérifier que toutes les alternatives sont présentes
-	if complete {
-		if len(prefs) != len(alts) {
-			return fmt.Errorf("le profil n'est pas complet : il manque des alternatives")
-		}
-		// Vérifier que chaque alternative de alts apparaît exactement une fois dans prefs
-		for _, alt := range alts {
-			if !seen[alt] {
-				return fmt.Errorf("l'alternative %v n'apparaît pas dans le profil", alt)
-			}
+	// Vérifier que chaque alternative de alts apparaît exactement une fois dans prefs
+	for _, alt := range alts {
+		if !seen[alt] {
+			return fmt.Errorf("l'alternative %v n'apparaît pas dans le profil", alt)
 		}
 	}
-
 	return nil
 }
 
-// vérifie le profil donné, en passant 'complete' pour déterminer le niveau de vérification
-func checkProfileAlternative(prefs Profile, alts []Alternative, complete bool) error {
+// vérifie le profil donné, par ex. qu'ils sont tous complets et
+// que chaque alternative de alts apparaît exactement une fois par préférences
+func checkProfileAlternative(prefs Profile, alts []Alternative) error {
 	for _, p := range prefs {
-		if err := checkProfile(p, alts, complete); err != nil {
+		if err := checkProfile(p, alts); err != nil {
 			return err
 		}
 	}
