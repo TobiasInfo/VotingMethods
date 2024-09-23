@@ -1,6 +1,10 @@
 package comsoc
 
 func BordaSWF(p Profile) (count Count, err error) {
+	alts := RecoverAlts(p)
+	if err := checkProfileAlternative(p, alts); err != nil {
+		return nil, err
+	}
 	count = make(Count)
 	for _, prefs := range p {
 		for i, alt := range prefs {
