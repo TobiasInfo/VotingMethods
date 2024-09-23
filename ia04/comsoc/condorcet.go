@@ -2,12 +2,13 @@ package comsoc
 
 import "fmt"
 
-// TODO : implement CondorcetWinner function
 func CondorcetWinner(p Profile) (bestAlts []Alternative, err error) {
-	// check if the profile is valid
-	if err = checkProfileAlternative(p, RecoverAlts(p)); err != nil {
-		return nil, fmt.Errorf("invalid profile: %w", err)
+	alts := RecoverAlts(p)
+	if err := checkProfileAlternative(p, alts); err != nil {
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("not implemented yet")
+	// TODO : implement the CondorcetWinner algorithm
+	return nil, fmt.Errorf("CondorcetWinner not implemented yet")
+
 }
