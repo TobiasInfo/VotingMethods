@@ -4,6 +4,8 @@ import "fmt"
 
 func TieBreakFactory(orderedAlts []Alternative) func([]Alternative) (Alternative, error) {
 	return func(alts []Alternative) (Alternative, error) {
+		// orders [ 1, 2, 3, 4, 5]
+		// alts [ 2, 4]
 		altMap := make(map[Alternative]bool)
 		for _, alt := range alts {
 			altMap[alt] = true
@@ -21,6 +23,7 @@ func TieBreakFactory(orderedAlts []Alternative) func([]Alternative) (Alternative
 
 func SWFFactory(swf func(p Profile) (Count, error), tb func([]Alternative) (Alternative, error)) func(Profile) ([]Alternative, error) {
 	return func(p Profile) ([]Alternative, error) {
+		// Applique la SWF particuliére
 		count, err := swf(p)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get count from SWF: %w", err)

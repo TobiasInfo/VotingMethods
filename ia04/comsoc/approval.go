@@ -2,6 +2,8 @@ package comsoc
 
 import "fmt"
 
+// On donne tte les alternatives pour lesquels on est d'accord
+// +1 à chaque fois qu'une alternative est proposée
 func ApprovalSWF(p Profile, thresholds []int) (count Count, err error) {
 	alts := RecoverAlts(p)
 	if err := checkProfileAlternative(p, alts); err != nil {
