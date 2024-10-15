@@ -30,7 +30,7 @@ func sendRequest(id int) {
 	ballotData := []byte(fmt.Sprintf(`{
 		"rule": "majority",
 		"deadline": "%s",
-		"voter-ids": ["voter1", "voter2", "voter3"],
+		"voter-ids": ["ag_id1", "ag_id2", "ag_id3"],
 		"#alts": 3,
 		"tie-break": [1, 2, 3]
 	}`, time.Now().Add(24*time.Hour).Format(time.RFC3339)))
