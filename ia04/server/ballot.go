@@ -28,8 +28,8 @@ var supportedRules = map[string]bool{
 	"majority": true,
 	"borda":    true,
 	"approval": true,
-	"stv":      true,
-	"kemeny":   true, // Added "kemeny" as supported
+	"condorcet": true,
+	"copeland": true,
 }
 
 type BallotRequest struct {
