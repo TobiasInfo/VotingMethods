@@ -9,7 +9,7 @@ func NewRouter() *mux.Router {
 	//router.HandleFunc("/result", ResultHandler).Methods("GET")
 	router.HandleFunc("/finish", FinishHandler).Methods("POST")
 
-	router.HandleFunc("/new_ballot", newBallotHandler).Methods("POST")
+	router.HandleFunc("/new_ballot", createBallotHandler).Methods("POST")
 	router.HandleFunc("/vote", voteHandler).Methods("POST")
 	router.HandleFunc("/result", resultHandler).Methods("GET")
 	return router

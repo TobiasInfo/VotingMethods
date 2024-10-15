@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 )
 
 var nbOfRequests = 0
+var requestMutex sync.Mutex // Mutex to protect nbOfRequests
 
 type Ballot struct {
 	Rule     string    `json:"rule"`
@@ -19,18 +21,32 @@ type Ballot struct {
 }
 
 var ballots = map[string]Ballot{}
+var ballotRequests = make(chan BallotRequest) // Channel for ballot creation requests
 
-// TODO : Add vote that are implemented
+// Supported voting rules
 var supportedRules = map[string]bool{
 	"majority": true,
 	"borda":    true,
 	"approval": true,
 	"stv":      true,
+	"kemeny":   true, // Added "kemeny" as supported
 }
 
-func newBallotHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO : Check if we need mutex or channel to increment nbOfRequests
-	nbOfRequests++
+type BallotRequest struct {
+	Ballot Ballot
+	Resp   chan string // Channel to send the response back to the handler
+}
+
+func init() {
+	// Start a goroutine to process ballot requests
+	go func() {
+		for request := range ballotRequests {
+			createBallot(request)
+		}
+	}()
+}
+
+func createBallotHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
@@ -43,13 +59,14 @@ func newBallotHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if ballot.Rule == "" || ballot.Deadline.IsZero() || len(ballot.VoterIDs) == 0 || ballot.NumAlts == 0 || len(ballot.TieBreak) == 0 {
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
+	// Validate the fields
+	if !supportedRules[ballot.Rule] {
+		http.Error(w, "Voting rule not implemented", http.StatusNotImplemented)
 		return
 	}
 
-	if !supportedRules[ballot.Rule] {
-		http.Error(w, "Voting rule not implemented", http.StatusNotImplemented)
+	if len(ballot.VoterIDs) == 0 {
+		http.Error(w, "Voter IDs are required", http.StatusBadRequest)
 		return
 	}
 
@@ -59,19 +76,36 @@ func newBallotHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(ballot.TieBreak) != ballot.NumAlts {
-		http.Error(w, "Invalid tie-breaking function", http.StatusBadRequest)
+		http.Error(w, "Tie-break length must match number of alternatives", http.StatusBadRequest)
 		return
 	}
 
-	ballot.BallotID = "scrutin" + strconv.Itoa(nbOfRequests)
+	// Create a response channel for the ballot creation request
+	responseChan := make(chan string)
+	ballotRequests <- BallotRequest{Ballot: ballot, Resp: responseChan}
 
-	ballots[ballot.BallotID] = ballot
+	// Wait for the response from the ballot creation goroutine
+	ballotID := <-responseChan
 
 	response := map[string]string{
-		"ballot-id": ballot.BallotID,
+		"ballot-id": ballotID,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
+}
+
+func createBallot(request BallotRequest) {
+	// Increment the nbOfRequests safely using the mutex
+	requestMutex.Lock()
+	nbOfRequests++
+	request.Ballot.BallotID = "scrutin" + strconv.Itoa(nbOfRequests)
+	requestMutex.Unlock()
+
+	// Store the ballot in the map
+	ballots[request.Ballot.BallotID] = request.Ballot
+
+	// Send the response back to the handler
+	request.Resp <- request.Ballot.BallotID
 }
