@@ -8,74 +8,73 @@ import (
 	"time"
 )
 
-
-
 // Compute the result based on the voting rule and the votes received
 func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternative, []comsoc.Alternative, error) {
-    // Recover the vote method from the ballot
-    _, isRuleSupported := supportedRules[ballot.Rule]
-    if !isRuleSupported {
+	// Recover the vote method from the ballot
+	_, isRuleSupported := supportedRules[ballot.Rule]
+	if !isRuleSupported {
 		return 0, nil, fmt.Errorf("unsupported voting rule")
-    }
+	}
 
-    // Create the profile from the votes
-    profile := comsoc.Profile{}
-    for _, vote := range ballotVotes {
-        // Convert vote.Prefs to comsoc.Alternative
-        comsocVote := make([]comsoc.Alternative, len(vote.Prefs))
-        for i, alt := range vote.Prefs {
-            comsocVote[i] = comsoc.Alternative(alt)
-        }
-    }
+	// Create the profile from the votes
+	profile := comsoc.Profile{}
+	for _, vote := range ballotVotes {
+		// Convert vote.Prefs to comsoc.Alternative
+		comsocVote := make([]comsoc.Alternative, len(vote.Prefs))
+		for i, alt := range vote.Prefs {
+			comsocVote[i] = comsoc.Alternative(alt)
+		}
+	}
 
-    var winner comsoc.Alternative
-    var ranking []comsoc.Alternative
-    var err error
+	var winner comsoc.Alternative
+	var ranking []comsoc.Alternative
+	var err error
 
-    var swf func(p comsoc.Profile) (comsoc.Count, error)
+	// var swf func(p comsoc.Profile) (comsoc.Count, error)
 	var tieBreaker func([]comsoc.Alternative) (comsoc.Alternative, error)
-    
-    // Convert TieBreak from int to comsoc.Alternative
-    tieBreakSlice := make([]comsoc.Alternative, len(ballot.TieBreak))
-    for i, alt := range ballot.TieBreak {
-        tieBreakSlice[i] = comsoc.Alternative(alt)
-    }
+	var scf func(comsoc.Profile) ([]comsoc.Alternative, error)
+	var scffactory func(comsoc.Profile) (comsoc.Alternative, error)
 
-    tieBreaker = comsoc.TieBreakFactory(tieBreakSlice)
+	// Convert TieBreak from int to comsoc.Alternative
+	tieBreakSlice := make([]comsoc.Alternative, len(ballot.TieBreak))
+	for i, alt := range ballot.TieBreak {
+		tieBreakSlice[i] = comsoc.Alternative(alt)
+	}
+	tieBreaker = comsoc.TieBreakFactory(tieBreakSlice)
 
-    switch ballot.Rule {
-        case "majority":
-            swf = comsoc.MajoritySWF
-        case "borda":
-            swf = comsoc.BordaSWF
-        // case "approval":
-        //     best, err := comsoc.ApprovalSWF(profile, ballot.TieBreak)
-        //     if err != nil {
-        //         return 0, nil, fmt.Errorf("failed to compute the winner: %w", err)
-        //     }
-        //     tieBreaker = comsoc.TieBreakFactory(ballot.TieBreak)
-        //     return 0, best, nil
-        
-        // case "condorcet":
-        //     swf = comsoc.CondorcetWinner
+	switch ballot.Rule {
+	case "majority":
+		// swf = comsoc.MajoritySWF
+		scf = comsoc.MajoritySCF
+	case "borda":
+		// swf = comsoc.BordaSWF
+		scf = comsoc.BordaSCF
+	// case "approval":
+	//     best, err := comsoc.ApprovalSWF(profile, ballot.TieBreak)
+	//     if err != nil {
+	//         return 0, nil, fmt.Errorf("failed to compute the winner: %w", err)
+	//     }
+	//     tieBreaker = comsoc.TieBreakFactory(ballot.TieBreak)
+	//     return 0, best, nil
 
-        case "copeland":
-            swf = comsoc.CopelandSWF
+	// case "condorcet":
+	//     swf = comsoc.CondorcetWinner
 
-        default:
-            return 0, nil, fmt.Errorf("unsupported voting rule")
-        }
+	case "copeland":
+		scf = comsoc.CopelandSCF
 
-        scf := comsoc.SWFFactory(swf, tieBreaker)
-        ranking, err = scf(profile)
-        if err != nil {
-            return 0, nil, fmt.Errorf("failed to compute the winner: %w", err)
-        }
+	default:
+		return 0, nil, fmt.Errorf("unsupported voting rule")
+	}
 
-        if len(ranking) > 0 {
-            winner, err = tieBreaker(ranking)
-        }
-        return winner, ranking, nil
+	scffactory = comsoc.SCFFactory(scf, tieBreaker)
+	winner, err = scffactory(profile)
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to compute the winner: %w", err)
+	}
+	ranking, err = []comsoc.Alternative{}, nil
+
+	return winner, ranking, nil
 }
 
 // Result handler to compute the result of a voting session
@@ -130,7 +129,6 @@ func resultHandler(w http.ResponseWriter, r *http.Request) {
 	if len(ranking) > 0 {
 		response["ranking"] = ranking
 	}
-
 	// Return the result
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
