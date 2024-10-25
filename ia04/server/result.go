@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"ia04/comsoc"
+
+	// "log"
 	"net/http"
-	"time"
+	// "time"
 )
 
 // Compute the result based on the voting rule and the votes received
@@ -18,12 +20,23 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 
 	// Create the profile from the votes
 	profile := comsoc.Profile{}
+	thresholds := make([]int, 0, len(ballotVotes))
+	if ballot.Rule == "approval" {
+		for _, vote := range ballotVotes {
+			if len(vote.Options) == 1 {
+				thresholds = append(thresholds, vote.Options[0])
+			} else {
+				return 0, nil, fmt.Errorf("approval vote must have only one option")
+			}
+		}
+	}
 	for _, vote := range ballotVotes {
 		// Convert vote.Prefs to comsoc.Alternative
 		comsocVote := make([]comsoc.Alternative, len(vote.Prefs))
 		for i, alt := range vote.Prefs {
 			comsocVote[i] = comsoc.Alternative(alt)
 		}
+		profile = append(profile, comsocVote)
 	}
 
 	var winner comsoc.Alternative
@@ -33,6 +46,7 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 	// var swf func(p comsoc.Profile) (comsoc.Count, error)
 	var tieBreaker func([]comsoc.Alternative) (comsoc.Alternative, error)
 	var scf func(comsoc.Profile) ([]comsoc.Alternative, error)
+	var scfapproval func(comsoc.Profile, []int) ([]comsoc.Alternative, error)
 	var scffactory func(comsoc.Profile) (comsoc.Alternative, error)
 
 	// Convert TieBreak from int to comsoc.Alternative
@@ -44,29 +58,34 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 
 	switch ballot.Rule {
 	case "majority":
-		// swf = comsoc.MajoritySWF
 		scf = comsoc.MajoritySCF
 	case "borda":
-		// swf = comsoc.BordaSWF
 		scf = comsoc.BordaSCF
-	// case "approval":
-	//     best, err := comsoc.ApprovalSWF(profile, ballot.TieBreak)
-	//     if err != nil {
-	//         return 0, nil, fmt.Errorf("failed to compute the winner: %w", err)
-	//     }
-	//     tieBreaker = comsoc.TieBreakFactory(ballot.TieBreak)
-	//     return 0, best, nil
-
-	// case "condorcet":
-	//     swf = comsoc.CondorcetWinner
+	case "approval":
+		scfapproval = comsoc.ApprovalSCF
+	case "condorcet":
+		scf = comsoc.CondorcetWinner
 
 	case "copeland":
 		scf = comsoc.CopelandSCF
 
 	default:
-		return 0, nil, fmt.Errorf("unsupported voting rule")
+		return 0, ranking, fmt.Errorf("unsupported voting rule")
 	}
-
+	if ballot.Rule == "approval" {
+		alts, err := scfapproval(profile, thresholds)
+		if err != nil {
+			return 0, ranking, fmt.Errorf("failed to get alternatives from SCF: %w", err)
+		}
+		if len(alts) == 1 {
+			return alts[0], ranking, nil
+		}
+		alt, err := tieBreaker(alts)
+		if err != nil {
+			return 0, ranking, fmt.Errorf("failed to get best alternative from tie-breaking function: %w", err)
+		}
+		return alt, ranking, nil
+	}
 	scffactory = comsoc.SCFFactory(scf, tieBreaker)
 	winner, err = scffactory(profile)
 	if err != nil {
@@ -102,10 +121,10 @@ func resultHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if the voting deadline has passed
-	if time.Now().Before(ballot.Deadline) {
-		http.Error(w, "Voting still ongoing", http.StatusTooEarly)
-		return
-	}
+	// if time.Now().Before(ballot.Deadline) {
+	// 	http.Error(w, "Voting still ongoing", http.StatusTooEarly)
+	// 	return
+	// }
 
 	// Get the votes for the ballot
 	ballotVotes, voted := votes[request.BallotID]

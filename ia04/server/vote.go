@@ -3,7 +3,7 @@ package server
 import (
 	"encoding/json"
 	"net/http"
-	"time"
+	// "time"
 )
 
 // Vote structure to store the vote information
@@ -20,7 +20,7 @@ var votes = map[string]map[string]Vote{} // Mapping of BallotID -> AgentID -> Vo
 var voteChannel = make(chan VoteRequest)
 
 type VoteRequest struct {
-	Vote    Vote
+	Vote     Vote
 	RespChan chan Response
 }
 
@@ -63,11 +63,11 @@ func processVotes() {
 		}
 
 		// Check if the voting deadline has passed
-		if time.Now().After(ballot.Deadline) {
-			response = Response{StatusCode: http.StatusServiceUnavailable, Message: "Voting deadline has passed"}
-			req.RespChan <- response
-			continue
-		}
+		// if time.Now().After(ballot.Deadline) {
+		// 	response = Response{StatusCode: http.StatusServiceUnavailable, Message: "Voting deadline has passed"}
+		// 	req.RespChan <- response
+		// 	continue
+		// }
 
 		// Check if the agent has already voted
 		if _, voted := votes[vote.BallotID][vote.AgentID]; voted {
