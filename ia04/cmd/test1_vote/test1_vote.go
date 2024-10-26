@@ -10,7 +10,7 @@ import (
 
 func main() {
 	ballotData := map[string]interface{}{
-		"rule":      "borda",
+		"rule":      "majority",
 		"deadline":  "2020-10-09T23:05:08+02:00",
 		"voter-ids": []string{"ag_id1", "ag_id2", "ag_id3"},
 		"#alts":     4,

@@ -39,7 +39,7 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 		profile = append(profile, comsocVote)
 	}
 
-	var winner comsoc.Alternative
+	var winner comsoc.Alternative = 0
 	ranking := make([]comsoc.Alternative, 0)
 	var err error
 	// var swf func(p comsoc.Profile) (comsoc.Count, error)
@@ -78,7 +78,6 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 		return 0, ranking, fmt.Errorf("unsupported voting rule")
 	}
 	if ballot.Rule == "approval" {
-		winner = 0
 		alts, err := scfapproval(profile, thresholds)
 		if err != nil {
 			return winner, ranking, fmt.Errorf("failed to get alternatives from SCF: %w", err)
@@ -91,6 +90,7 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 		if err != nil {
 			return winner, ranking, fmt.Errorf("failed to get best alternative from tie-breaking function: %w", err)
 		}
+		winner = alt
 		count, err := swfapproval(profile, thresholds)
 		if err != nil {
 			return winner, ranking, fmt.Errorf("failed to get count from SWF: %w", err)
@@ -112,7 +112,7 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 				delete(count, alt)
 			}
 		}
-		return alt, ranking, nil
+		return winner, ranking, nil
 	}
 	scffactory = comsoc.SCFFactory(scf, tieBreaker)
 	winner, err = scffactory(profile)
