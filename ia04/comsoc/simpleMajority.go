@@ -7,6 +7,9 @@ func MajoritySWF(p Profile) (count Count, err error) {
 		return nil, err
 	}
 	count = make(Count)
+	for _, alt := range alts {
+		count[alt] = 0
+	}
 	for _, prefs := range p {
 		firstChoice := prefs[0]
 		count[firstChoice] += 1

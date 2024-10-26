@@ -1,6 +1,9 @@
 package comsoc
 
-import "fmt"
+import (
+	"fmt"
+	// "log"
+)
 
 func TieBreakFactory(orderedAlts []Alternative) func([]Alternative) (Alternative, error) {
 	return func(alts []Alternative) (Alternative, error) {
@@ -30,14 +33,19 @@ func SWFFactory(swf func(p Profile) (Count, error), tb func([]Alternative) (Alte
 		}
 		bestAlts := make([]Alternative, 0)
 		for {
+			// log.Println("count", count)
+			// log.Println("ranking", bestAlts)
 			bestAlt := MaxCount(count)
 			if len(bestAlt) == 0 {
+				// log.Println("case1")
 				break
 			}
 			if len(bestAlt) == 1 {
+				// log.Println("case2")
 				bestAlts = append(bestAlts, bestAlt[0])
 				delete(count, bestAlt[0])
 			} else {
+				// log.Println("case3")
 				alt, err := tb(bestAlt)
 				if err != nil {
 					return nil, fmt.Errorf("failed to get best alternative from tie-breaking function: %w", err)

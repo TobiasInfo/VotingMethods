@@ -108,7 +108,7 @@ func main() {
 		go func(i int) {
 			defer wg_create_ballot.Done()
 			ballotData := map[string]interface{}{
-				"rule":      "majority",
+				"rule":      "approval",
 				"deadline":  time.Now().Add(24 * time.Hour).Format(time.RFC3339),
 				"voter-ids": []string{"ag_id1", "ag_id2", "ag_id3"},
 				"#alts":     4,

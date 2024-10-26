@@ -92,6 +92,7 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 		}
 		winner = alt
 		count, err := swfapproval(profile, thresholds)
+		// log.Println("count", count)
 		if err != nil {
 			return winner, ranking, fmt.Errorf("failed to get count from SWF: %w", err)
 		}
@@ -112,6 +113,7 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 				delete(count, alt)
 			}
 		}
+		// log.Println("ranking", ranking)
 		return winner, ranking, nil
 	}
 	scffactory = comsoc.SCFFactory(scf, tieBreaker)
@@ -120,10 +122,14 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 		return 0, nil, fmt.Errorf("failed to compute the winner: %w", err)
 	}
 	if swf == nil {
+		ranking = append(ranking, winner)
 		return winner, ranking, nil
 	}
+	// count, _ := swf(profile)
+	// log.Println("count", count)
 	swffactory = comsoc.SWFFactory(swf, tieBreaker)
 	ranking, err = swffactory(profile)
+	// log.Println("ranking", ranking)
 	if err != nil {
 		return winner, ranking, fmt.Errorf("failed to compute ranking: %w", err)
 	}

@@ -10,7 +10,7 @@ import (
 
 func main() {
 	ballotData := map[string]interface{}{
-		"rule":      "majority",
+		"rule":      "condorcet",
 		"deadline":  "2020-10-09T23:05:08+02:00",
 		"voter-ids": []string{"ag_id1", "ag_id2", "ag_id3"},
 		"#alts":     4,
@@ -25,16 +25,19 @@ func main() {
 			"agent-id":  "ag_id1",
 			"ballot-id": "scrutin1",
 			"prefs":     []int{4, 2, 3, 1},
+			"options":   []int{1},
 		},
 		{
 			"agent-id":  "ag_id2",
 			"ballot-id": "scrutin1",
-			"prefs":     []int{1, 2, 3, 4},
+			"prefs":     []int{1, 4, 3, 2},
+			"options":   []int{2},
 		},
 		{
 			"agent-id":  "ag_id3",
 			"ballot-id": "scrutin1",
-			"prefs":     []int{4, 2, 3, 1},
+			"prefs":     []int{1, 2, 3, 4},
+			"options":   []int{1},
 		},
 	}
 

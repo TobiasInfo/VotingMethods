@@ -6,6 +6,9 @@ func BordaSWF(p Profile) (count Count, err error) {
 		return nil, err
 	}
 	count = make(Count)
+	for _, alt := range alts {
+		count[alt] = 0
+	}
 	for _, prefs := range p {
 		for i, alt := range prefs {
 			count[alt] += len(prefs) - 1 - i

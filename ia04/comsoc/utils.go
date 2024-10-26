@@ -1,6 +1,9 @@
 package comsoc
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 // renvoie l'indice ou se trouve alt dans prefs
 func rank(alt Alternative, prefs []Alternative) int {
@@ -32,7 +35,7 @@ func isPref(alt1, alt2 Alternative, prefs []Alternative) bool {
 // un seul passage apr la boucle est suffisant on reinitialise bestAlts a chaque fois qu'on trouve un meilleur score
 func MaxCount(count Count) (bestAlts []Alternative) {
 	bestAlts = make([]Alternative, 0)
-	var max int
+	max := math.MinInt
 	for alt, c := range count {
 		if c > max {
 			max = c

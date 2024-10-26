@@ -13,6 +13,9 @@ func ApprovalSWF(p Profile, thresholds []int) (count Count, err error) {
 		return nil, fmt.Errorf("le nombre de seuils ne correspond pas au nombre de préférences")
 	}
 	count = make(Count)
+	for _, alt := range alts {
+		count[alt] = 0
+	}
 	for i := 0; i < len(p); i++ {
 		for j := 0; j < thresholds[i]; j++ {
 			count[p[i][j]]++
