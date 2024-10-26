@@ -49,5 +49,5 @@ func CopelandSCF(p Profile) (bestAlts []Alternative, err error) {
 		return nil, err
 	}
 
-	return maxCount(count), nil
+	return MaxCount(count), nil
 }

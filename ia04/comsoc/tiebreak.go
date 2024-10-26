@@ -30,7 +30,7 @@ func SWFFactory(swf func(p Profile) (Count, error), tb func([]Alternative) (Alte
 		}
 		bestAlts := make([]Alternative, 0)
 		for {
-			bestAlt := maxCount(count)
+			bestAlt := MaxCount(count)
 			if len(bestAlt) == 0 {
 				break
 			}

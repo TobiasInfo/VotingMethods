@@ -18,5 +18,5 @@ func BordaSCF(p Profile) (bestAlts []Alternative, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return maxCount(count), nil
+	return MaxCount(count), nil
 }

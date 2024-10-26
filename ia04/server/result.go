@@ -40,15 +40,16 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 	}
 
 	var winner comsoc.Alternative
-	var ranking []comsoc.Alternative
+	ranking := make([]comsoc.Alternative, 0)
 	var err error
-
 	// var swf func(p comsoc.Profile) (comsoc.Count, error)
 	var tieBreaker func([]comsoc.Alternative) (comsoc.Alternative, error)
 	var scf func(comsoc.Profile) ([]comsoc.Alternative, error)
+	var swf func(comsoc.Profile) (comsoc.Count, error)
 	var scfapproval func(comsoc.Profile, []int) ([]comsoc.Alternative, error)
+	var swfapproval func(comsoc.Profile, []int) (comsoc.Count, error)
 	var scffactory func(comsoc.Profile) (comsoc.Alternative, error)
-
+	var swffactory func(comsoc.Profile) ([]comsoc.Alternative, error)
 	// Convert TieBreak from int to comsoc.Alternative
 	tieBreakSlice := make([]comsoc.Alternative, len(ballot.TieBreak))
 	for i, alt := range ballot.TieBreak {
@@ -59,30 +60,57 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 	switch ballot.Rule {
 	case "majority":
 		scf = comsoc.MajoritySCF
+		swf = comsoc.MajoritySWF
 	case "borda":
 		scf = comsoc.BordaSCF
+		swf = comsoc.BordaSWF
 	case "approval":
 		scfapproval = comsoc.ApprovalSCF
+		swfapproval = comsoc.ApprovalSWF
 	case "condorcet":
 		scf = comsoc.CondorcetWinner
-
+		swf = nil
 	case "copeland":
 		scf = comsoc.CopelandSCF
+		swf = comsoc.CopelandSWF
 
 	default:
 		return 0, ranking, fmt.Errorf("unsupported voting rule")
 	}
 	if ballot.Rule == "approval" {
+		winner = 0
 		alts, err := scfapproval(profile, thresholds)
 		if err != nil {
-			return 0, ranking, fmt.Errorf("failed to get alternatives from SCF: %w", err)
+			return winner, ranking, fmt.Errorf("failed to get alternatives from SCF: %w", err)
 		}
 		if len(alts) == 1 {
-			return alts[0], ranking, nil
+			winner = alts[0]
+			return winner, ranking, nil
 		}
 		alt, err := tieBreaker(alts)
 		if err != nil {
-			return 0, ranking, fmt.Errorf("failed to get best alternative from tie-breaking function: %w", err)
+			return winner, ranking, fmt.Errorf("failed to get best alternative from tie-breaking function: %w", err)
+		}
+		count, err := swfapproval(profile, thresholds)
+		if err != nil {
+			return winner, ranking, fmt.Errorf("failed to get count from SWF: %w", err)
+		}
+		for {
+			bestAlt := comsoc.MaxCount(count)
+			if len(bestAlt) == 0 {
+				break
+			}
+			if len(bestAlt) == 1 {
+				ranking = append(ranking, bestAlt[0])
+				delete(count, bestAlt[0])
+			} else {
+				alt, err := tieBreaker(bestAlt)
+				if err != nil {
+					return winner, ranking, fmt.Errorf("failed to get best alternative from tie-breaking function: %w", err)
+				}
+				ranking = append(ranking, alt)
+				delete(count, alt)
+			}
 		}
 		return alt, ranking, nil
 	}
@@ -91,8 +119,14 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 	if err != nil {
 		return 0, nil, fmt.Errorf("failed to compute the winner: %w", err)
 	}
-	ranking, err = []comsoc.Alternative{}, nil
-
+	if swf == nil {
+		return winner, ranking, nil
+	}
+	swffactory = comsoc.SWFFactory(swf, tieBreaker)
+	ranking, err = swffactory(profile)
+	if err != nil {
+		return winner, ranking, fmt.Errorf("failed to compute ranking: %w", err)
+	}
 	return winner, ranking, nil
 }
 

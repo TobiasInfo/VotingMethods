@@ -26,5 +26,5 @@ func ApprovalSCF(p Profile, thresholds []int) (bestAlts []Alternative, err error
 	if err != nil {
 		return nil, err
 	}
-	return maxCount(count), nil
+	return MaxCount(count), nil
 }

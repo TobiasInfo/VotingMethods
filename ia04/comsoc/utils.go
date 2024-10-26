@@ -30,7 +30,7 @@ func isPref(alt1, alt2 Alternative, prefs []Alternative) bool {
 
 // renvoie les meilleures alternatives pour un décomtpe donné
 // un seul passage apr la boucle est suffisant on reinitialise bestAlts a chaque fois qu'on trouve un meilleur score
-func maxCount(count Count) (bestAlts []Alternative) {
+func MaxCount(count Count) (bestAlts []Alternative) {
 	bestAlts = make([]Alternative, 0)
 	var max int
 	for alt, c := range count {

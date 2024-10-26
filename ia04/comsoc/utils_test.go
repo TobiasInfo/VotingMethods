@@ -32,13 +32,13 @@ func TestIsPref(t *testing.T) {
 
 func TestMaxCount(t *testing.T) {
 	count := Count{1: 1, 2: 1, 3: 2}
-	bestAlts := maxCount(count)
+	bestAlts := MaxCount(count)
 	if len(bestAlts) != 1 || bestAlts[0] != 3 {
 		t.Error("The best alternative should be 3")
 	}
 
 	count2 := Count{1: 1, 2: 2, 3: 1, 4: 2}
-	bestAlts2 := maxCount(count2)
+	bestAlts2 := MaxCount(count2)
 	if len(bestAlts2) != 2 || !Contains(bestAlts2, 2) || !Contains(bestAlts2, 4) {
 		t.Error("The best alternatives should be 2 and 4")
 	}
