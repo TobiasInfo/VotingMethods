@@ -136,6 +136,73 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 	return winner, ranking, nil
 }
 
+var resultChannel = make(chan ResultRequest)
+
+type ResultRequest struct {
+	BallotID string
+	RespChan chan ResultResponse
+}
+
+type ResultResponse struct {
+	StatusCode int
+	Message    string
+	Data       map[string]interface{}
+}
+
+func init() {
+	go processResults()
+}
+
+// Function to process result requests from the channel
+func processResults() {
+	for req := range resultChannel {
+		response := ResultResponse{}
+
+		// Check if the ballot exists
+		ballot, exists := ballots[req.BallotID]
+		if !exists {
+			response = ResultResponse{StatusCode: http.StatusNotFound, Message: "Ballot not found"}
+			req.RespChan <- response
+			continue
+		}
+
+		// Check if voting is complete (optional deadline check commented out)
+		// if time.Now().Before(ballot.Deadline) {
+		// 	response = ResultResponse{StatusCode: http.StatusTooEarly, Message: "Voting still ongoing"}
+		// 	req.RespChan <- response
+		// 	continue
+		// }
+
+		// Retrieve the votes for the ballot
+		ballotVotes, voted := votes[req.BallotID]
+		if !voted || len(ballotVotes) == 0 {
+			response = ResultResponse{StatusCode: http.StatusNotFound, Message: "No votes have been cast for this ballot"}
+			req.RespChan <- response
+			continue
+		}
+
+		// Compute the result based on the rule
+		winner, ranking, err := computeResult(ballot, ballotVotes)
+		if err != nil {
+			response = ResultResponse{StatusCode: http.StatusInternalServerError, Message: err.Error()}
+			req.RespChan <- response
+			continue
+		}
+
+		// Prepare the response data
+		data := map[string]interface{}{
+			"winner": winner,
+		}
+		if len(ranking) > 0 {
+			data["ranking"] = ranking
+		}
+
+		// Send the success response with data
+		response = ResultResponse{StatusCode: http.StatusOK, Message: "Result computed successfully", Data: data}
+		req.RespChan <- response
+	}
+}
+
 // Result handler to compute the result of a voting session
 func resultHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -146,50 +213,27 @@ func resultHandler(w http.ResponseWriter, r *http.Request) {
 	var request struct {
 		BallotID string `json:"ballot-id"`
 	}
-
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil || request.BallotID == "" {
 		http.Error(w, "Invalid request body or missing ballot-id", http.StatusBadRequest)
 		return
 	}
 
-	// Check if the ballot exists
-	ballot, exists := ballots[request.BallotID]
-	if !exists {
-		http.Error(w, "Ballot not found", http.StatusNotFound)
-		return
-	}
+	// Channel to receive the response
+	responseChannel := make(chan ResultResponse)
 
-	// Check if the voting deadline has passed
-	// if time.Now().Before(ballot.Deadline) {
-	// 	http.Error(w, "Voting still ongoing", http.StatusTooEarly)
-	// 	return
-	// }
+	// Send the result request to the channel
+	resultChannel <- ResultRequest{BallotID: request.BallotID, RespChan: responseChannel}
 
-	// Get the votes for the ballot
-	ballotVotes, voted := votes[request.BallotID]
-	if !voted || len(ballotVotes) == 0 {
-		http.Error(w, "No votes have been cast for this ballot", http.StatusNotFound)
-		return
-	}
+	// Wait for the response
+	response := <-responseChannel
 
-	// Compute the result based on the rule
-	winner, ranking, err := computeResult(ballot, ballotVotes)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	// Return the response
+	w.WriteHeader(response.StatusCode)
+	if response.StatusCode == http.StatusOK {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response.Data)
+	} else {
+		w.Write([]byte(response.Message))
 	}
-
-	// Build the response
-	response := map[string]interface{}{
-		"winner": winner,
-	}
-
-	if len(ranking) > 0 {
-		response["ranking"] = ranking
-	}
-	// Return the result
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
 }

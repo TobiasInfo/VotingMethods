@@ -24,24 +24,26 @@ func sendPostRequest(url string, data map[string]interface{}) (*http.Response, e
 	return resp, nil
 }
 
-func new_ballot_request(url string, data map[string]interface{}) bool {
+func newBallotRequest(url string, data map[string]interface{}, done chan<- bool) {
 	resp, err := sendPostRequest(url, data)
 	if err != nil {
 		fmt.Println(err)
-		return false
+		done <- false
+		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		fmt.Printf("Request to %s failed with status: %s\n", url, resp.Status)
-		return false
+		done <- false
+		return
 	}
 
 	fmt.Printf("Request to %s succeeded with status: %s\n", url, resp.Status)
-	return true
+	done <- true
 }
 
-func vote_request(ballotID string) {
+func voteRequest(ballotID string, done chan<- bool) {
 	votes := []map[string]interface{}{
 		{
 			"agent-id":  "ag_id1",
@@ -67,20 +69,23 @@ func vote_request(ballotID string) {
 		resp, err := sendPostRequest("http://localhost:8080/vote", vote)
 		if err != nil {
 			fmt.Println(err)
+			done <- false
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 			fmt.Printf("Request to %s failed with status: %s\n", "http://localhost:8080/vote", resp.Status)
+			done <- false
 			return
 		}
 
 		fmt.Printf("Request to %s succeeded with status: %s\n", "http://localhost:8080/vote", resp.Status)
 	}
+	done <- true
 }
 
-func result_request(url string, data map[string]interface{}) []byte {
+func resultRequest(url string, data map[string]interface{}) []byte {
 	resp, err := sendPostRequest(url, data)
 	if err != nil {
 		fmt.Println(err)
@@ -102,11 +107,13 @@ func result_request(url string, data map[string]interface{}) []byte {
 }
 
 func main() {
-	var wg_create_ballot sync.WaitGroup
-	wg_create_ballot.Add(100)
+	// Channel for ballot creation
+	createBallotDone := make(chan bool)
+	var wgCreateBallot sync.WaitGroup
 	for i := 1; i <= 100; i++ {
+		wgCreateBallot.Add(1)
 		go func(i int) {
-			defer wg_create_ballot.Done()
+			defer wgCreateBallot.Done()
 			ballotData := map[string]interface{}{
 				"rule":      "approval",
 				"deadline":  time.Now().Add(24 * time.Hour).Format(time.RFC3339),
@@ -114,48 +121,82 @@ func main() {
 				"#alts":     4,
 				"tie-break": []int{4, 1, 3, 2},
 			}
-			if !new_ballot_request("http://localhost:8080/new_ballot", ballotData) {
-				return
-			}
+			newBallotRequest("http://localhost:8080/new_ballot", ballotData, createBallotDone)
 		}(i)
 	}
 
-	wg_create_ballot.Wait()
+	// Wait for all ballots to be created
+	go func() {
+		wgCreateBallot.Wait()
+		close(createBallotDone)
+	}()
+
+	// Wait for ballot creation to complete
+	for success := range createBallotDone {
+		if !success {
+			fmt.Println("Ballot creation failed for one or more ballots.")
+		}
+	}
 	fmt.Println("All new ballot requests completed")
 
-	var wg_vote sync.WaitGroup
-	wg_vote.Add(100)
-
+	// Channel for vote requests
+	voteDone := make(chan bool)
+	var wgVote sync.WaitGroup
 	for i := 1; i <= 100; i++ {
+		wgVote.Add(1)
 		go func(i int) {
-			defer wg_vote.Done()
+			defer wgVote.Done()
 			ballotID := fmt.Sprintf("scrutin%d", i)
-			vote_request(ballotID)
+			voteRequest(ballotID, voteDone)
 		}(i)
 	}
 
-	wg_vote.Wait()
+	// Wait for all votes to be cast
+	go func() {
+		wgVote.Wait()
+		close(voteDone)
+	}()
+
+	// Wait for vote requests to complete
+	for success := range voteDone {
+		if !success {
+			fmt.Println("Voting failed for one or more ballots.")
+		}
+	}
 	fmt.Println("All vote requests completed")
 
-	var wg_get_results sync.WaitGroup
-	wg_get_results.Add(100)
-
+	// Channel for result requests
+	resultDone := make(chan bool)
+	var wgResult sync.WaitGroup
 	for i := 1; i <= 100; i++ {
+		wgResult.Add(1)
 		go func(i int) {
-			defer wg_get_results.Done()
+			defer wgResult.Done()
 			ballotID := fmt.Sprintf("scrutin%d", i)
 			resultData := map[string]interface{}{
 				"ballot-id": ballotID,
 			}
-			result := result_request("http://localhost:8080/result", resultData)
+			result := resultRequest("http://localhost:8080/result", resultData)
 			if result != nil {
 				fmt.Printf("Final Result for %s: %s\n", ballotID, string(result))
 			} else {
 				fmt.Printf("Failed to retrieve result for %s.\n", ballotID)
 			}
+			resultDone <- result != nil
 		}(i)
 	}
 
-	wg_get_results.Wait()
+	// Wait for all results to be retrieved
+	go func() {
+		wgResult.Wait()
+		close(resultDone)
+	}()
+
+	// Collect result request outcomes
+	for success := range resultDone {
+		if !success {
+			fmt.Println("Result retrieval failed for one or more ballots.")
+		}
+	}
 	fmt.Println("All result retrievals completed")
 }
