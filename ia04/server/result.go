@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"ia04/comsoc"
-
-	// "log"
+	"log"
 	"net/http"
 	// "time"
 )
@@ -56,7 +55,6 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 		tieBreakSlice[i] = comsoc.Alternative(alt)
 	}
 	tieBreaker = comsoc.TieBreakFactory(tieBreakSlice)
-
 	switch ballot.Rule {
 	case "majority":
 		scf = comsoc.MajoritySCF
@@ -77,6 +75,8 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 	default:
 		return 0, ranking, fmt.Errorf("unsupported voting rule")
 	}
+	log.Printf("Computing result for ballot %s with rule %s", ballot.BallotID, ballot.Rule)
+	log.Printf("Profile: %v with thresholds: %v", profile, thresholds)
 	if ballot.Rule == "approval" {
 		alts, err := scfapproval(profile, thresholds)
 		if err != nil {
@@ -84,6 +84,13 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 		}
 		if len(alts) == 1 {
 			winner = alts[0]
+			ranking = append(ranking, winner)
+			for _, alt := range tieBreakSlice {
+				if alt != winner {
+					ranking = append(ranking, alt)
+				}
+			}
+			log.Printf("Winner: %v with ranking: %v", winner, ranking)
 			return winner, ranking, nil
 		}
 		alt, err := tieBreaker(alts)
@@ -92,7 +99,6 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 		}
 		winner = alt
 		count, err := swfapproval(profile, thresholds)
-		// log.Println("count", count)
 		if err != nil {
 			return winner, ranking, fmt.Errorf("failed to get count from SWF: %w", err)
 		}
@@ -113,7 +119,7 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 				delete(count, alt)
 			}
 		}
-		// log.Println("ranking", ranking)
+		log.Printf("Winner: %v with ranking: %v", winner, ranking)
 		return winner, ranking, nil
 	}
 	scffactory = comsoc.SCFFactory(scf, tieBreaker)
@@ -123,16 +129,20 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 	}
 	if swf == nil {
 		ranking = append(ranking, winner)
+		for _, alt := range tieBreakSlice {
+			if alt != winner {
+				ranking = append(ranking, alt)
+			}
+		}
+		log.Printf("Winner: %v with ranking: %v", winner, ranking)
 		return winner, ranking, nil
 	}
-	// count, _ := swf(profile)
-	// log.Println("count", count)
 	swffactory = comsoc.SWFFactory(swf, tieBreaker)
 	ranking, err = swffactory(profile)
-	// log.Println("ranking", ranking)
 	if err != nil {
 		return winner, ranking, fmt.Errorf("failed to compute ranking: %w", err)
 	}
+	log.Printf("Winner: %v with ranking: %v", winner, ranking)
 	return winner, ranking, nil
 }
 
