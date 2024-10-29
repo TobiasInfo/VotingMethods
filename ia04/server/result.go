@@ -6,7 +6,7 @@ import (
 	"ia04/comsoc"
 	"log"
 	"net/http"
-	// "time"
+	"time"
 )
 
 // Compute the result based on the voting rule and the votes received
@@ -176,11 +176,11 @@ func processResults() {
 		}
 
 		// Check if voting is complete (optional deadline check commented out)
-		// if time.Now().Before(ballot.Deadline) {
-		// 	response = ResultResponse{StatusCode: http.StatusTooEarly, Message: "Voting still ongoing"}
-		// 	req.RespChan <- response
-		// 	continue
-		// }
+		if time.Now().Before(ballot.Deadline) {
+			response = ResultResponse{StatusCode: http.StatusTooEarly, Message: "Voting still ongoing"}
+			req.RespChan <- response
+			continue
+		}
 
 		// Retrieve the votes for the ballot
 		ballotVotes, voted := votes[req.BallotID]
