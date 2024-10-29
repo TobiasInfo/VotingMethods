@@ -3,7 +3,7 @@ package server
 import (
 	//"encoding/json"
 	//"ia04/agt"
-	"ia04/comsoc"
+	"github.com/TobiasInfo/SystemeMultiAgents/comsoc"
 	"net/http"
 	"sync"
 )

@@ -3,10 +3,10 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"ia04/comsoc"
+	"github.com/TobiasInfo/SystemeMultiAgents/comsoc"
 	"log"
 	"net/http"
-	// "time"
+	"time"
 )
 
 // Compute the result based on the voting rule and the votes received
@@ -175,12 +175,12 @@ func processResults() {
 			continue
 		}
 
-		// Check if voting is complete (optional deadline check commented out)
-		// if time.Now().Before(ballot.Deadline) {
-		// 	response = ResultResponse{StatusCode: http.StatusTooEarly, Message: "Voting still ongoing"}
-		// 	req.RespChan <- response
-		// 	continue
-		// }
+		//Check if voting is complete (optional deadline check commented out)
+		if time.Now().Before(ballot.Deadline) {
+			response = ResultResponse{StatusCode: http.StatusTooEarly, Message: "Voting still ongoing"}
+			req.RespChan <- response
+			continue
+		}
 
 		// Retrieve the votes for the ballot
 		ballotVotes, voted := votes[req.BallotID]

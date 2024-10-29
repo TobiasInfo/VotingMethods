@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ia04/server"
+	"github.com/TobiasInfo/SystemeMultiAgents/server"
 	"log"
 	"net/http"
 )
