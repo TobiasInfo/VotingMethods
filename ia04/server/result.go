@@ -20,15 +20,7 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 	// Create the profile from the votes
 	profile := comsoc.Profile{}
 	thresholds := make([]int, 0, len(ballotVotes))
-	if ballot.Rule == "approval" {
-		for _, vote := range ballotVotes {
-			if len(vote.Options) == 1 {
-				thresholds = append(thresholds, vote.Options[0])
-			} else {
-				return 0, nil, fmt.Errorf("approval vote must have only one option")
-			}
-		}
-	}
+
 	for _, vote := range ballotVotes {
 		// Convert vote.Prefs to comsoc.Alternative
 		comsocVote := make([]comsoc.Alternative, len(vote.Prefs))
@@ -36,6 +28,13 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 			comsocVote[i] = comsoc.Alternative(alt)
 		}
 		profile = append(profile, comsocVote)
+		if ballot.Rule == "approval" {
+			if len(vote.Options) == 1 {
+				thresholds = append(thresholds, vote.Options[0])
+			} else {
+				return 0, nil, fmt.Errorf("approval vote must have only one option")
+			}
+		}
 	}
 
 	var winner comsoc.Alternative = 0
@@ -128,14 +127,14 @@ func computeResult(ballot Ballot, ballotVotes map[string]Vote) (comsoc.Alternati
 		return 0, nil, fmt.Errorf("failed to compute the winner: %w", err)
 	}
 	if swf == nil {
-		ranking = append(ranking, winner)
-		for _, alt := range tieBreakSlice {
-			if alt != winner {
-				ranking = append(ranking, alt)
-			}
-		}
+		// ranking = append(ranking, winner)
+		// for _, alt := range tieBreakSlice {
+		// 	if alt != winner {
+		// 		ranking = append(ranking, alt)
+		// 	}
+		// }
 		log.Printf("Winner: %v with ranking: %v", winner, ranking)
-		return winner, ranking, nil
+		return winner, nil, nil
 	}
 	swffactory = comsoc.SWFFactory(swf, tieBreaker)
 	ranking, err = swffactory(profile)
