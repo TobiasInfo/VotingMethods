@@ -1,9 +1,10 @@
 package main
 
 import (
-	"ia04/server"
 	"log"
 	"net/http"
+
+	"github.com/TobiasInfo/SystemeMultiAgents/ia04/server"
 )
 
 func main() {

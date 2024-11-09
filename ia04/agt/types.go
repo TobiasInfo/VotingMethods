@@ -1,6 +1,6 @@
 package agt
 
-import "ia04/comsoc"
+import "github.com/TobiasInfo/SystemeMultiAgents/ia04/comsoc"
 
 type Alternative = comsoc.Alternative
 

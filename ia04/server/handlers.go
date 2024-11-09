@@ -3,9 +3,10 @@ package server
 import (
 	//"encoding/json"
 	//"ia04/agt"
-	"ia04/comsoc"
 	"net/http"
 	"sync"
+
+	"github.com/TobiasInfo/SystemeMultiAgents/ia04/comsoc"
 )
 
 var (

@@ -3,10 +3,11 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"ia04/comsoc"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/TobiasInfo/SystemeMultiAgents/ia04/comsoc"
 )
 
 // Compute the result based on the voting rule and the votes received
